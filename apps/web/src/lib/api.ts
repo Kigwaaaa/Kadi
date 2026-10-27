@@ -10,7 +10,38 @@ const cardSchema = z.object({
   rank: z.union([z.number(), z.string()]),
   suit: suitSchema.nullable(),
 });
+const legalMoveSchema = z.discriminatedUnion("type", [
+  z
+    .object({
+      type: z.literal("play"),
+      cardIds: z.array(z.string().min(1)).min(1),
+      aceRequest: z
+        .object({
+          suit: suitSchema.optional(),
+          rank: z.number().int().min(2).max(10).optional(),
+        })
+        .strict()
+        .optional(),
+    })
+    .strict(),
+  z.object({ type: z.literal("draw") }).strict(),
+  z
+    .object({
+      type: z.literal("counter"),
+      kind: z.enum(["king", "jack", "ace"]),
+      cardIds: z.array(z.string().min(1)).min(1).max(2),
+    })
+    .strict(),
+  z.object({ type: z.literal("nikoKadi") }).strict(),
+  z
+    .object({
+      type: z.literal("chooseAceRequest"),
+      forgo: z.enum(["suit", "rank"]),
+    })
+    .strict(),
+]);
 const playerViewSchema = z.object({
+  legalMoves: z.array(legalMoveSchema),
   players: z.array(
     z.object({
       id: z.string().uuid(),
@@ -331,6 +362,7 @@ export function useKadiApi() {
         room: unknown;
         players: unknown;
         view?: unknown;
+        legalMoves?: unknown;
         chat: unknown;
         chatReset?: unknown;
         serverTime: unknown;
@@ -345,7 +377,10 @@ export function useKadiApi() {
       const parsedRoom = parseRoom(roomData, players);
       setRoom(parsedRoom);
       if (payload.view) {
-        const parsedView = playerViewSchema.parse(payload.view);
+        const parsedView = playerViewSchema.parse({
+          ...(payload.view as Record<string, unknown>),
+          legalMoves: z.array(legalMoveSchema).parse(payload.legalMoves),
+        });
         windowDeadlineRef.current = parsedView.window?.deadline ?? null;
         setGameView(parsedView);
       } else {

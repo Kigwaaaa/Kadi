@@ -1,4 +1,4 @@
-import { createGame } from "@kadi/engine";
+import { createGame, getLegalMoves } from "@kadi/engine";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
@@ -111,6 +111,7 @@ describe("room API routes", () => {
     const body = await response.json();
     expect(body.view.players[0].hand).toEqual(room.state.players[0].hand);
     expect(body.view.players[1].hand).toBeNull();
+    expect(body.legalMoves).toEqual(getLegalMoves(room.state, playerId));
     expect(body).not.toHaveProperty("deck");
     expect(body).not.toHaveProperty("state");
     expect(body).toHaveProperty("serverTime");

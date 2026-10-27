@@ -132,6 +132,22 @@ export function GameTable({
   const hand = ownPlayer?.hand ?? [];
   const selectedCards = hand.filter((card) => selectedIds.includes(card.id));
   const selectedAces = selectedCards.filter((card) => card.rank === "A");
+  const legalPlayMoves =
+    gameView?.legalMoves.filter((move) => move.type === "play") ?? [];
+  const playableCardIds = new Set(
+    legalPlayMoves.flatMap((move) => move.cardIds),
+  );
+  const isLegalSelection = (cardIds: string[]) =>
+    legalPlayMoves.some((move) =>
+      cardIds.every((cardId) => move.cardIds.includes(cardId)),
+    );
+  const selectedLegalPlay = legalPlayMoves.find(
+    (move) =>
+      move.cardIds.length === selectedIds.length &&
+      move.cardIds.every((cardId) => selectedIds.includes(cardId)),
+  );
+  const canAddCardToSelection = (cardId: string) =>
+    isLegalSelection([...selectedIds, cardId]);
   const roomPlayers = new Map(
     room.players.map((player) => [player.id, player]),
   );
@@ -148,7 +164,6 @@ export function GameTable({
     !actionWindow &&
     !pendingAceChoice &&
     gameView.currentPlayerId === playerId;
-  const handRank = selectedCards[0]?.rank;
   const directionLabel =
     gameView?.direction === 1 ? "Clockwise" : "Counter-clockwise";
   const activePenalty = gameView?.pendingPenalty?.amount;
@@ -188,8 +203,17 @@ export function GameTable({
       return false;
     }
     setBusy(true);
-    const result = await emit(event, payload);
-    setBusy(false);
+    let result: Awaited<ReturnType<KadiEmit>>;
+    try {
+      result = await emit(event, payload);
+    } catch {
+      setToast(
+        "That action couldn’t be sent. Check your connection and try again.",
+      );
+      return false;
+    } finally {
+      setBusy(false);
+    }
     if (!result.ok) {
       setToast(friendlyActionError(result.code));
       return false;
@@ -209,8 +233,10 @@ export function GameTable({
         return current.filter((selected) => selected !== cardId);
       const card = hand.find((item) => item.id === cardId);
       if (!card) return current;
-      if (current.length && handRank !== card.rank) {
-        setToast("A multi-card play must use cards of the same rank.");
+      if (!isLegalSelection([...current, cardId])) {
+        setToast(
+          "That card does not complete a legal play with this selection.",
+        );
         return current;
       }
       if (card.rank === "A" && current.length >= 2) {
@@ -227,6 +253,10 @@ export function GameTable({
       setToast("Choose a card from your hand first.");
       return;
     }
+    if (!selectedLegalPlay) {
+      setToast("That selection cannot be played. Choose a playable card.");
+      return;
+    }
     if (selectedAces.length) {
       setAceChoice({});
       setAcePickerOpen(true);
@@ -234,7 +264,7 @@ export function GameTable({
     }
     if (
       await runAction("game:play", {
-        cardIds: selectedIds,
+        cardIds: selectedLegalPlay.cardIds,
       })
     ) {
       setSelectedIds([]);
@@ -254,9 +284,27 @@ export function GameTable({
       );
       return;
     }
+    if (!selectedLegalPlay) {
+      setToast("That selection cannot be played. Choose a playable card.");
+      return;
+    }
+    const requestIsLegal = gameView?.legalMoves.some(
+      (move) =>
+        move.type === "play" &&
+        move.cardIds.length === selectedLegalPlay.cardIds.length &&
+        move.cardIds.every((cardId) =>
+          selectedLegalPlay.cardIds.includes(cardId),
+        ) &&
+        move.aceRequest?.suit === aceChoice.suit &&
+        move.aceRequest?.rank === aceChoice.rank,
+    );
+    if (!requestIsLegal) {
+      setToast("That Ace request is no longer available. Choose again.");
+      return;
+    }
     if (
       await runAction("game:play", {
-        cardIds: selectedIds,
+        cardIds: selectedLegalPlay.cardIds,
         aceRequest: aceChoice,
       })
     ) {
@@ -781,28 +829,30 @@ export function GameTable({
                 Your hand · {hand.length} {hand.length === 1 ? "card" : "cards"}
               </p>
               <div
-                aria-label="Your hand. Select one or more cards of the same rank."
-                className="flex w-full touch-pan-x items-end overflow-x-auto px-1 pb-4 pt-4 sm:justify-center sm:overflow-visible"
+                aria-label="Your hand. Select a legal card or card combination."
+                className="flex w-full touch-pan-x items-end overflow-x-auto px-1 pb-4 pt-4 sm:justify-center"
                 role="group"
                 tabIndex={0}
               >
                 {hand.map((card, index) => (
                   <div
-                    className={`${index ? "-ml-4 sm:-ml-3" : ""} shrink-0`}
+                    className={`${index ? "-ml-2 sm:-ml-2" : ""} shrink-0`}
                     key={card.id}
                   >
                     <Card
                       card={card}
                       disabled={
                         (!turnIsYours && !selectedIds.includes(card.id)) ||
-                        (selectedIds.length > 0 &&
-                          handRank !== card.rank &&
+                        (!playableCardIds.has(card.id) &&
                           !selectedIds.includes(card.id)) ||
+                        (selectedIds.length > 0 &&
+                          !selectedIds.includes(card.id) &&
+                          !canAddCardToSelection(card.id)) ||
                         (card.rank === "A" &&
                           selectedIds.length >= 2 &&
                           !selectedIds.includes(card.id))
                       }
-                      className="sm:h-36 sm:w-24"
+                      className="h-36 w-[6.5rem] sm:h-44 sm:w-32"
                       label={`${getCardName(card)}${selectedIds.includes(card.id) ? ", selected" : ""}`}
                       onClick={() => toggleCard(card.id)}
                       selected={selectedIds.includes(card.id)}
@@ -821,13 +871,14 @@ export function GameTable({
                   disabled={
                     !turnIsYours ||
                     selectedIds.length === 0 ||
+                    !selectedLegalPlay ||
                     busy ||
                     !connected
                   }
                   onClick={() => void playSelected()}
                   type="button"
                 >
-                  Play
+                  {busy ? "Playing…" : "Play"}
                   {selectedIds.length > 1 ? ` ${selectedIds.length} cards` : ""}
                 </button>
                 {actionWindow && nikosAvailable && (
@@ -845,11 +896,21 @@ export function GameTable({
                 aria-live="polite"
                 className="min-h-5 text-center text-xs font-semibold text-[#566553]"
               >
-                {turnIsYours
-                  ? "Your turn. Select a card or draw."
-                  : actionWindow
-                    ? `Everyone waits for the window. Next: ${nextName}.`
-                    : `Waiting for ${nextName}.`}
+                {busy
+                  ? "Sending your move…"
+                  : !connected
+                    ? "Reconnecting. Game actions are temporarily unavailable."
+                    : turnIsYours
+                      ? selectedIds.length > 0
+                        ? selectedLegalPlay
+                          ? `${selectedIds.length} ${selectedIds.length === 1 ? "card" : "cards"} selected. Tap Play to confirm.`
+                          : "That combination is not playable. Change your selection."
+                        : legalPlayMoves.length > 0
+                          ? "Your turn. Select a playable card or draw."
+                          : "No playable cards. Draw from the deck."
+                      : actionWindow
+                        ? `Everyone waits for the window. Next: ${nextName}.`
+                        : `Waiting for ${nextName}.`}
               </p>
             </div>
           </div>
