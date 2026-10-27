@@ -6,7 +6,7 @@ export function getSupabaseAdminClient() {
   const supabaseUrl = process.env.SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!supabaseUrl || !serviceRoleKey) {
-    throw new Error("Supabase server configuration is missing.");
+    throw new Error("SUPABASE_CONFIGURATION_MISSING");
   }
 
   return createClient(supabaseUrl, serviceRoleKey, {

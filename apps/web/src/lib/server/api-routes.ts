@@ -125,7 +125,18 @@ export function jsonError(error: unknown): NextResponse {
   if (error instanceof Error && error.message === "RATE_LIMIT_UNAVAILABLE") {
     return NextResponse.json({ error: "SERVICE_UNAVAILABLE" }, { status: 503 });
   }
+  if (
+    error instanceof Error &&
+    error.message === "SUPABASE_CONFIGURATION_MISSING"
+  ) {
+    return NextResponse.json({ error: "SERVICE_UNAVAILABLE" }, { status: 503 });
+  }
 
-  console.error("API request failed.");
+  console.error(
+    "API request failed.",
+    error instanceof Error
+      ? { name: error.name, message: error.message }
+      : { type: typeof error },
+  );
   return NextResponse.json({ error: "REQUEST_FAILED" }, { status: 500 });
 }
