@@ -89,5 +89,4 @@ closed when rate-limit credentials are missing or unavailable.
 - Confirm Upstash limits are active in the deployment environment.
 - Confirm the cleanup cron is configured and `CRON_SECRET` is set.
 - Run `pnpm lint`, `pnpm test`, `pnpm build`, and `pnpm audit`.
-- Complete the remaining launch checklist in `docs/LAUNCH.md`, including
-  replacing the creator photo placeholder with a real photo.
+- Complete the remaining launch checklist in `docs/LAUNCH.md`.

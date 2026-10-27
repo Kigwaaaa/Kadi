@@ -52,7 +52,7 @@ function PlayerSeat({
   return (
     <li
       aria-current={current ? "step" : undefined}
-      className={`min-w-32 rounded-2xl border px-3 py-2.5 ${
+      className={`min-w-36 rounded-2xl border px-3 py-2 ${
         current
           ? "border-[#d7894f] bg-[#fff2e5] shadow-md ring-2 ring-[#d7894f]/35"
           : "border-[#e8dfd2] bg-[#fffdf8]"
@@ -60,14 +60,26 @@ function PlayerSeat({
       key={id}
     >
       <div className="flex items-center justify-between gap-2">
-        <div className="min-w-0">
-          <p className="truncate text-sm font-extrabold">
-            {name}
-            {self && <span className="ml-1 text-xs font-semibold">(you)</span>}
-          </p>
-          <p className="mt-0.5 text-xs font-semibold text-[#68736b]">
-            {cardCount} {cardCount === 1 ? "card" : "cards"}
-          </p>
+        <div className="flex min-w-0 items-center gap-2">
+          <span
+            aria-hidden="true"
+            className={`flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-black ${
+              current ? "bg-[#c64f32] text-white" : "bg-[#315e40] text-white"
+            }`}
+          >
+            {name.trim().charAt(0).toUpperCase() || "?"}
+          </span>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-extrabold">
+              {name}
+              {self && (
+                <span className="ml-1 text-xs font-semibold">(you)</span>
+              )}
+            </p>
+            <p className="mt-0.5 text-xs font-semibold text-[#68736b]">
+              {cardCount} {cardCount === 1 ? "card" : "cards"}
+            </p>
+          </div>
         </div>
         <span
           aria-label={current ? "Current turn" : "Waiting"}
@@ -518,26 +530,7 @@ export function GameTable({
           className="mt-4 rounded-[1.75rem] border border-[#dfd5c6] bg-[#e4eadf] p-3 shadow-[0_20px_70px_-42px_rgba(28,40,34,0.45)] sm:mt-6 sm:rounded-[2.5rem] sm:p-6"
         >
           <div className="rounded-[1.35rem] border border-[#cbd5c5] bg-[#edf1e8] p-3 sm:rounded-[2rem] sm:p-5">
-            <ul
-              aria-label="Players and card counts"
-              className="flex gap-2 overflow-x-auto pb-2 sm:flex-wrap sm:justify-center"
-            >
-              {namedPlayers
-                .filter((player) => player.id !== playerId)
-                .map((player) => (
-                  <PlayerSeat
-                    cardCount={player.cardCount}
-                    current={player.id === gameView.currentPlayerId}
-                    id={player.id}
-                    key={player.id}
-                    name={player.name}
-                    nikoKadiPressed={player.nikoKadiPressed}
-                    self={false}
-                  />
-                ))}
-            </ul>
-
-            <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+            <div className="flex flex-wrap items-center justify-center gap-2">
               <span
                 aria-label={`Play direction: ${directionLabel}`}
                 className="rounded-full border border-[#d2dbcd] bg-[#fffdf8] px-3 py-1.5 text-xs font-extrabold text-[#45594a]"
@@ -597,21 +590,45 @@ export function GameTable({
               )}
             </div>
 
+            <ul
+              aria-label="Players and card counts"
+              className="mx-auto mt-3 flex max-w-5xl flex-wrap justify-center gap-2 pb-2"
+            >
+              {namedPlayers
+                .filter((player) => player.id !== playerId)
+                .map((player) => (
+                  <PlayerSeat
+                    cardCount={player.cardCount}
+                    current={player.id === gameView.currentPlayerId}
+                    id={player.id}
+                    key={player.id}
+                    name={player.name}
+                    nikoKadiPressed={player.nikoKadiPressed}
+                    self={false}
+                  />
+                ))}
+            </ul>
+
             <div className="mt-4 grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:mt-6 sm:gap-5">
-              <button
-                aria-label={`Draw pile, ${gameView.deckCount} cards. Draw a card`}
-                className="relative mx-auto flex h-28 w-[4.6rem] flex-col items-center justify-center rounded-xl border-2 border-[#fffdf8] bg-[#315840] text-center text-white shadow-lg transition hover:-translate-y-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#cf5939] disabled:cursor-not-allowed disabled:opacity-50 sm:h-36 sm:w-24"
-                disabled={!turnIsYours || busy || !connected}
-                onClick={() => void runAction("game:draw", {})}
-                type="button"
-              >
-                <span className="absolute inset-0">
-                  <CardBack decorative />
+              <div className="mx-auto flex flex-col items-center">
+                {gameView.discard.length > 0 ? (
+                  <CardFace
+                    card={gameView.discard[gameView.discard.length - 1]!}
+                    className="h-28 w-[4.6rem] sm:h-36 sm:w-24"
+                    label={`Top discard card: ${getCardName(gameView.discard[gameView.discard.length - 1]!)}`}
+                  />
+                ) : (
+                  <div
+                    aria-label="Discard pile is empty"
+                    className="flex h-28 w-[4.6rem] items-center justify-center rounded-xl border-2 border-dashed border-[#b8c5b2] text-xs font-bold text-[#647363] sm:h-36 sm:w-24"
+                  >
+                    Discard
+                  </div>
+                )}
+                <span className="mt-1 text-[10px] font-black uppercase tracking-wide text-[#566553]">
+                  Discard
                 </span>
-                <span className="absolute bottom-1 z-10 rounded bg-[#000000] px-1.5 py-0.5 text-[9px] font-black text-white">
-                  {gameView.deckCount} left
-                </span>
-              </button>
+              </div>
 
               <div className="text-center">
                 <div
@@ -638,25 +655,20 @@ export function GameTable({
                 </p>
               </div>
 
-              <div className="mx-auto flex flex-col items-center">
-                {gameView.discard.length > 0 ? (
-                  <CardFace
-                    card={gameView.discard[gameView.discard.length - 1]!}
-                    className="h-28 w-[4.6rem] sm:h-36 sm:w-24"
-                    label={`Top discard card: ${getCardName(gameView.discard[gameView.discard.length - 1]!)}`}
-                  />
-                ) : (
-                  <div
-                    aria-label="Discard pile is empty"
-                    className="flex h-28 w-[4.6rem] items-center justify-center rounded-xl border-2 border-dashed border-[#b8c5b2] text-xs font-bold text-[#647363] sm:h-36 sm:w-24"
-                  >
-                    Discard
-                  </div>
-                )}
-                <span className="mt-1 text-[10px] font-black uppercase tracking-wide text-[#566553]">
-                  Discard
+              <button
+                aria-label={`Draw pile, ${gameView.deckCount} cards. Draw a card`}
+                className="relative mx-auto flex h-28 w-[4.6rem] flex-col items-center justify-center rounded-xl border-2 border-[#fffdf8] bg-[#315840] text-center text-white shadow-lg transition hover:-translate-y-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#cf5939] disabled:cursor-not-allowed disabled:opacity-50 sm:h-36 sm:w-24"
+                disabled={!turnIsYours || busy || !connected}
+                onClick={() => void runAction("game:draw", {})}
+                type="button"
+              >
+                <span className="absolute inset-0">
+                  <CardBack decorative />
                 </span>
-              </div>
+                <span className="absolute bottom-1 z-10 rounded bg-[#000000] px-1.5 py-0.5 text-[9px] font-black text-white">
+                  {gameView.deckCount} left
+                </span>
+              </button>
             </div>
 
             {gameView.activeAceRequest &&
