@@ -425,7 +425,7 @@ export default function Home() {
                 Create room
               </button>
               <button
-                className="kadi-sticker-button min-h-14 rounded-2xl border-2 border-[#d8d0c3] bg-[#fffdf8] px-4 text-sm font-extrabold transition hover:-translate-y-0.5 hover:border-[#c64f32] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#c64f32]"
+                className="kadi-sticker-button min-h-14 rounded-2xl border-2 border-[#d8d0c3] bg-[#fffdf8] px-4 text-sm font-extrabold text-[#1c2822] transition hover:-translate-y-0.5 hover:border-[#c64f32] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#c64f32]"
                 onClick={() => {
                   setMode("join");
                   setError(null);
@@ -438,7 +438,7 @@ export default function Home() {
 
             {mode && (
               <form
-                className="mt-5 grid gap-3 rounded-3xl border border-[#e7dfd3] bg-[#fffdf8] p-4 shadow-[0_20px_70px_-44px_rgba(28,40,34,0.4)] sm:max-w-md sm:p-5"
+                className="mt-5 grid gap-3 rounded-3xl border border-[#e7dfd3] bg-[#fffdf8] p-4 text-[#1c2822] shadow-[0_20px_70px_-44px_rgba(28,40,34,0.4)] sm:max-w-md sm:p-5"
                 onSubmit={(event) => void submitRoom(event)}
               >
                 <div className="flex items-center justify-between">
