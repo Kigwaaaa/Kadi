@@ -1,0 +1,229 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-flag-black: #000000;
+  --color-flag-red: #bb0000;
+  --color-flag-green: #006600;
+  --color-flag-white: #ffffff;
+  --color-concrete: #242624;
+  --color-concrete-light: #383b38;
+  --color-paper: #f8f7f1;
+  --color-ink: #000000;
+  --font-poster: var(--font-display);
+  --font-sans: var(--font-body);
+}
+
+:root {
+  color-scheme: light;
+  --flag-black: #000000;
+  --flag-red: #bb0000;
+  --flag-green: #006600;
+  --flag-white: #ffffff;
+  --concrete: #242624;
+  --concrete-light: #383b38;
+  --paper: #f8f7f1;
+  --ink: #000000;
+  --display-font: var(--font-display), Impact, "Arial Narrow", sans-serif;
+  --body-font: var(--font-body), Arial, Helvetica, sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--body-font);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4,
+.font-display {
+  font-family: var(--display-font);
+  font-weight: 900;
+  letter-spacing: -0.025em;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+::selection {
+  background: var(--flag-red);
+  color: var(--flag-white);
+}
+
+.kadi-concrete {
+  position: relative;
+  isolation: isolate;
+  background-color: var(--concrete) !important;
+  background-image:
+    radial-gradient(
+      circle at 1px 1px,
+      rgb(255 255 255 / 7%) 1px,
+      transparent 0
+    ),
+    linear-gradient(135deg, rgb(255 255 255 / 3%), transparent 55%) !important;
+  background-size:
+    9px 9px,
+    auto !important;
+  color: var(--flag-white) !important;
+}
+
+.kadi-concrete::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background:
+    linear-gradient(
+      115deg,
+      transparent 0 46%,
+      rgb(187 0 0 / 12%) 46% 48%,
+      transparent 48%
+    ),
+    linear-gradient(
+      65deg,
+      transparent 0 60%,
+      rgb(0 102 0 / 13%) 60% 62%,
+      transparent 62%
+    );
+  content: "";
+  pointer-events: none;
+}
+
+.kadi-poster-panel {
+  border: 3px solid var(--flag-black) !important;
+  box-shadow:
+    7px 7px 0 var(--flag-red),
+    10px 10px 0 var(--flag-black) !important;
+}
+
+.kadi-sticker-button {
+  border: 3px solid var(--flag-black) !important;
+  box-shadow: 4px 4px 0 var(--flag-black) !important;
+  font-family: var(--display-font);
+  font-size: 1.15rem;
+  letter-spacing: 0.035em;
+  text-transform: uppercase;
+  transition:
+    transform 140ms ease,
+    box-shadow 140ms ease,
+    filter 140ms ease;
+}
+
+.kadi-sticker-button:hover:not(:disabled) {
+  transform: translate(-2px, -2px) rotate(-1deg);
+  box-shadow: 6px 6px 0 var(--flag-black) !important;
+  filter: saturate(1.12);
+}
+
+.kadi-sticker-button:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--flag-black) !important;
+}
+
+.kadi-card {
+  display: block;
+  width: 4.6rem;
+  height: 7rem;
+  flex: 0 0 auto;
+  padding: 0;
+  overflow: visible;
+  border: 0;
+  border-radius: 18px;
+  background: transparent;
+  color: inherit;
+  transition:
+    transform 160ms ease,
+    filter 160ms ease;
+}
+
+.kadi-card:focus-visible {
+  z-index: 20;
+  outline: 3px solid var(--flag-red);
+  outline-offset: 4px;
+}
+
+.kadi-card:not(:disabled):hover {
+  z-index: 5;
+  transform: translateY(-5px) rotate(-1deg);
+  filter: drop-shadow(4px 5px 0 rgb(0 0 0 / 30%));
+}
+
+.kadi-card-selected {
+  transform: translateY(-12px);
+  filter: drop-shadow(4px 5px 0 var(--flag-red));
+}
+
+.kadi-card-disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.kadi-card-art {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  filter: drop-shadow(3px 4px 0 rgb(0 0 0 / 28%));
+}
+
+.kadi-card {
+  animation: kadi-deal 300ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.kadi-card-art[aria-label] {
+  animation: kadi-flip 360ms ease-out both;
+  backface-visibility: hidden;
+}
+
+.halftone {
+  background-image: radial-gradient(currentColor 1px, transparent 1px);
+  background-size: 7px 7px;
+}
+
+@keyframes kadi-deal {
+  from {
+    opacity: 0;
+    transform: translateY(16px) rotate(5deg) scale(0.92);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) rotate(0) scale(1);
+  }
+}
+
+@keyframes kadi-flip {
+  from {
+    transform: perspective(500px) rotateY(88deg);
+  }
+
+  to {
+    transform: perspective(500px) rotateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

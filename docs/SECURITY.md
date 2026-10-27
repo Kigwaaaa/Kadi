@@ -1,0 +1,14 @@
+- No secrets or .env files committed. Provide .env.example only. No API keys or secrets in frontend code (only NEXT_PUBLIC_ public config).
+- Enforce every permission server-side (owner actions: kick, mute, end, restart; every game action). Never trust the client.
+- Validate, sanitize and whitelist every Next.js API and HTTP payload with zod. Reject unknown fields.
+- Rate limit: room create, join attempts (per IP and per room code), chat messages, game actions, Niko Kadi presses.
+- Render names and chat as plain text only. Never use dangerouslySetInnerHTML. Strip control characters, enforce length limits.
+- Guest identity: a server-issued unguessable token (32 random bytes) in an httpOnly, Secure, SameSite cookie. Never localStorage.
+- Room codes: crypto-random, collision-checked. The code space is small (about 260,000), so rate limit and lock out brute-force attempts; join only while the room is open and not full. Use UUIDs for all internal IDs.
+- The Vercel API is same-origin and does not enable CORS. If a separate origin is introduced, restrict it to an explicit ALLOWED_ORIGINS allowlist; never use wildcards.
+- Security headers and a CSP (Helmet-equivalent for the Next.js/Vercel runtime), including only the configured Supabase Realtime `wss:` origin in `connect-src`. No stack traces or internal error details to clients in production; return generic error codes.
+- Never send other players' hands or the deck order to any client; send each player only their own view.
+- Supabase Realtime broadcasts are invalidation signals only: `{type: "changed", version}`. Never include game state, cards, hands or chat content.
+- Run dependency audit in CI, pin versions and flag outdated or vulnerable packages.
+- If Supabase tables are ever added: enable RLS, parameterized queries or the ORM only, never expose the service key.
+- If accounts are ever added: hash passwords, enforce password strength, require email verification, secure admin routes with role checks.
