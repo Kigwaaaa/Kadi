@@ -51,10 +51,12 @@ export default function PrivacyPage() {
         </h2>
         <p>
           If you contact us, we store the name, email address and message you
-          submit in a restricted feedback database so we can review and answer
-          it. Please do not include passwords, payment details or other
-          sensitive information. We retain messages only as long as needed to
-          handle the enquiry and maintain appropriate records.
+          submit in a restricted feedback database and email the enquiry to the
+          Kadi contact inbox so we can review and answer it. The email delivery
+          provider processes the message on our behalf. Please do not include
+          passwords, payment details or other sensitive information. We retain
+          messages only as long as needed to handle the enquiry and maintain
+          appropriate records.
         </p>
         <p>
           We aim to respond within two business days. Use the{" "}
@@ -83,11 +85,11 @@ export default function PrivacyPage() {
           Sharing, security and changes
         </h2>
         <p>
-          We do not sell personal information. The feedback database provider
-          processes submitted enquiries for us. We use reasonable safeguards,
-          but no internet service can promise perfect security. We may update
-          this policy when the service changes; the date above will be updated
-          when we do.
+          We do not sell personal information. The feedback database and email
+          delivery providers process submitted enquiries for us. We use
+          reasonable safeguards, but no internet service can promise perfect
+          security. We may update this policy when the service changes; the date
+          above will be updated when we do.
         </p>
       </section>
 

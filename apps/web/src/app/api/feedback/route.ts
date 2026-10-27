@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { createFeedbackRateLimiter } from "../../../lib/feedback-rate-limit";
 import { feedbackSubmissionSchema } from "../../../lib/feedback";
 import { getSupabaseAdminClient } from "../../../lib/server/supabase-admin";
+import {
+  FeedbackEmailError,
+  sendFeedbackEmail,
+} from "../../../lib/server/feedback-email";
 
 const allowSubmission = createFeedbackRateLimiter(5, 60 * 60 * 1000);
 const allowedFields = new Set(["name", "email", "message", "website"]);
@@ -48,6 +52,19 @@ export async function POST(request: Request) {
   }
 
   try {
+    await sendFeedbackEmail(parsed.data);
+  } catch (error) {
+    console.error("Feedback email could not be delivered.", {
+      code:
+        error instanceof FeedbackEmailError
+          ? error.code
+          : "FEEDBACK_EMAIL_DELIVERY_FAILED",
+      status: error instanceof FeedbackEmailError ? error.status : undefined,
+    });
+    return redirectWithError(request, "SUBMISSION_FAILED");
+  }
+
+  try {
     const supabase = getSupabaseAdminClient();
     const { name, email, message } = parsed.data;
     const { error } = await supabase
@@ -55,12 +72,14 @@ export async function POST(request: Request) {
       .insert({ name, email, message });
 
     if (error) {
-      console.error("Feedback submission could not be stored.");
-      return redirectWithError(request, "SUBMISSION_FAILED");
+      console.error("Feedback email was delivered but could not be archived.", {
+        code: error.code,
+      });
     }
   } catch (error) {
-    console.error("Feedback submission could not be stored.", error);
-    return redirectWithError(request, "SUBMISSION_FAILED");
+    console.error("Feedback email was delivered but could not be archived.", {
+      name: error instanceof Error ? error.name : "UnknownError",
+    });
   }
 
   return NextResponse.redirect(new URL("/thank-you", request.url), 303);
