@@ -137,8 +137,6 @@ button {
 
 .kadi-card {
   display: block;
-  width: 4.6rem;
-  height: 7rem;
   flex: 0 0 auto;
   padding: 0;
   overflow: visible;

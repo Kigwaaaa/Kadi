@@ -31,6 +31,8 @@ const friendlyActionError = (code?: string) => {
   if (code === "GAME_NOT_ACTIVE") return "This game is no longer active.";
   if (code === "RESTART_REJECTED")
     return "The game can’t be restarted right now.";
+  if (code === "REQUEST_FAILED" || code === "SERVICE_UNAVAILABLE")
+    return "Couldn’t reach the game service. Check your connection and try again.";
   return "That move isn’t legal right now. Check the table and try again.";
 };
 
@@ -198,10 +200,7 @@ export function GameTable({
     event: E,
     payload: Parameters<ClientToServerEvents[E]>[0],
   ) => {
-    if (!connected || busy) {
-      if (!connected) setToast("Connection lost. Reconnect before acting.");
-      return false;
-    }
+    if (busy) return false;
     setBusy(true);
     let result: Awaited<ReturnType<KadiEmit>>;
     try {
@@ -706,7 +705,7 @@ export function GameTable({
               <button
                 aria-label={`Draw pile, ${gameView.deckCount} cards. Draw a card`}
                 className="relative mx-auto flex h-28 w-[4.6rem] flex-col items-center justify-center rounded-xl border-2 border-[#fffdf8] bg-[#315840] text-center text-white shadow-lg transition hover:-translate-y-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#cf5939] disabled:cursor-not-allowed disabled:opacity-50 sm:h-36 sm:w-24"
-                disabled={!turnIsYours || busy || !connected}
+                disabled={!turnIsYours || busy}
                 onClick={() => void runAction("game:draw", {})}
                 type="button"
               >
@@ -872,8 +871,7 @@ export function GameTable({
                     !turnIsYours ||
                     selectedIds.length === 0 ||
                     !selectedLegalPlay ||
-                    busy ||
-                    !connected
+                    busy
                   }
                   onClick={() => void playSelected()}
                   type="button"
@@ -899,7 +897,9 @@ export function GameTable({
                 {busy
                   ? "Sending your move…"
                   : !connected
-                    ? "Reconnecting. Game actions are temporarily unavailable."
+                    ? turnIsYours
+                      ? "Connection is reconnecting; the server will validate your move."
+                      : "Reconnecting. The latest turn status may be delayed."
                     : turnIsYours
                       ? selectedIds.length > 0
                         ? selectedLegalPlay
