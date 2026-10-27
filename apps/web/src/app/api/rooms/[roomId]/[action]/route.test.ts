@@ -156,4 +156,46 @@ describe("room API routes", () => {
     expect(response.status).toBe(403);
     expect(mocks.updatePlayer).not.toHaveBeenCalled();
   });
+
+  it("starts a lobby game for its owner when at least two players are present", async () => {
+    const room = { ...makeRoom(), status: "lobby" as const };
+    mocks.authContext = {
+      room,
+      player: mocks.authContext!.player,
+    };
+    mocks.getRoom.mockResolvedValue(room);
+    mocks.updateRoomState.mockImplementation(
+      async (_roomId, version, state, _retries, status) => ({
+        ...room,
+        state,
+        version: version + 1,
+        status,
+      }),
+    );
+
+    const response = await POST(
+      new Request(`https://kadi.example/api/rooms/${roomId}/start`, {
+        method: "POST",
+        headers: {
+          origin: "https://kadi.example",
+          "content-type": "application/json",
+        },
+        body: "{}",
+      }),
+      { params: Promise.resolve({ roomId, action: "start" }) },
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      version: room.version + 1,
+      status: "playing",
+    });
+    expect(mocks.updateRoomState).toHaveBeenCalledWith(
+      roomId,
+      room.version,
+      expect.objectContaining({ players: expect.any(Array) }),
+      0,
+      "playing",
+    );
+  });
 });

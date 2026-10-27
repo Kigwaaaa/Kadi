@@ -53,6 +53,7 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [starting, setStarting] = useState(false);
   const [copied, setCopied] = useState(false);
   const {
     room,
@@ -164,9 +165,15 @@ export default function Home() {
   };
 
   const startGame = async () => {
+    if (starting) return;
     setError(null);
-    const result = await emit("game:start", {});
-    if (!result.ok) setError(result.code ?? "START_REJECTED");
+    setStarting(true);
+    try {
+      const result = await emit("game:start", {});
+      if (!result.ok) setError(result.code ?? "START_REJECTED");
+    } finally {
+      setStarting(false);
+    }
   };
 
   const toggleMute = async (targetId: string, muted: boolean) => {
@@ -350,11 +357,11 @@ export default function Home() {
                   {isOwner ? (
                     <button
                       className="kadi-sticker-button min-h-14 w-full rounded-2xl bg-[#c64f32] px-5 text-base font-extrabold text-white shadow-lg shadow-[#c64f32]/20 transition hover:bg-[#ae422a] disabled:cursor-not-allowed disabled:bg-[#c9b9a8] disabled:shadow-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1c2822]"
-                      disabled={playerCount < 2 || !connected}
+                      disabled={playerCount < 2 || starting}
                       onClick={() => void startGame()}
                       type="button"
                     >
-                      Start game
+                      {starting ? "Starting…" : "Start game"}
                     </button>
                   ) : (
                     <p className="rounded-2xl bg-[#f1eadf] px-4 py-4 text-center text-sm font-semibold text-[#59645c]">
