@@ -4,7 +4,6 @@ import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 
 const policies = {
-  create: { limit: 5, window: "1 h" },
   joinIp: { limit: 20, window: "1 h" },
   joinCode: { limit: 5, window: "1 m" },
   chatIp: { limit: 30, window: "1 m" },

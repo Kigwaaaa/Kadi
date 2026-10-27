@@ -1,7 +1,7 @@
 - No secrets or .env files committed. Provide .env.example only. No API keys or secrets in frontend code (only NEXT_PUBLIC_ public config).
 - Enforce every permission server-side (owner actions: kick, mute, end, restart; every game action). Never trust the client.
 - Validate, sanitize and whitelist every Next.js API and HTTP payload with zod. Reject unknown fields.
-- Rate limit: room create, join attempts (per IP and per room code), chat messages, game actions, Niko Kadi presses.
+- Rate limit: join attempts (per IP and per room code), chat messages, game actions, Niko Kadi presses. Room-creation rate limiting is temporarily disabled at the operator's request; restore it before public launch because automated room creation can consume the small room-code space.
 - Render names and chat as plain text only. Never use dangerouslySetInnerHTML. Strip control characters, enforce length limits.
 - Guest identity: a server-issued unguessable token (32 random bytes) in an httpOnly, Secure, SameSite cookie. Never localStorage.
 - Room codes: crypto-random, collision-checked. The code space is small (about 260,000), so rate limit and lock out brute-force attempts; join only while the room is open and not full. Use UUIDs for all internal IDs.

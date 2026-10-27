@@ -8,7 +8,6 @@ import {
   getRoom,
   setRoomOwner,
 } from "../../../lib/server/kadi-data";
-import { enforceRateLimit } from "../../../lib/server/api-security";
 import {
   ApiRouteError,
   guestCookieOptions,
@@ -35,19 +34,10 @@ const createRoomSchema = z
   })
   .strict();
 
-function clientIp(request: Request): string {
-  return request.headers.get("x-real-ip")?.trim() || "unknown";
-}
-
 export async function POST(request: Request) {
   try {
     requireSameOrigin(request);
     const { name } = await parseJsonBody(request, createRoomSchema);
-    try {
-      await enforceRateLimit("create", clientIp(request));
-    } catch (error) {
-      return jsonError(error);
-    }
 
     const guestToken = newGuestToken();
     const room = await createRoom();

@@ -23,7 +23,7 @@ const nameSchema = z
 
 const errorMessages: Record<string, string> = {
   INVALID_PAYLOAD: "Check the name and room code, then try again.",
-  RATE_LIMITED: "Too many attempts. Wait a moment and try again.",
+  RATE_LIMITED: "Too many join attempts. Wait a moment and try again.",
   ALREADY_IN_ROOM: "You’re already in a room on this connection.",
   ROOM_NOT_FOUND: "That room code wasn’t found. Check it and try again.",
   ROOM_CLOSED: "That room is closed because its game has already started.",
