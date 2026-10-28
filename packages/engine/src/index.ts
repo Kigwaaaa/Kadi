@@ -1224,23 +1224,7 @@ export function applyAction(
 
   const player = state.players[index]!;
   if (validatedAction.type === "draw") {
-    const legalPlays = validActionsForHand(state, player);
-    const forcedByNiko = player.nikoKadiPressed && !canWinNow(state, player);
     const forcedByPenalty = state.pendingPenalty !== null;
-    const forcedByAceRequest = state.activeAceRequest !== null;
-    if (
-      !forcedByNiko &&
-      !forcedByPenalty &&
-      !forcedByAceRequest &&
-      player.hand.length > 0 &&
-      legalPlays.length > 0
-    ) {
-      return fail(
-        "DRAW_NOT_ALLOWED",
-        "A card must be played when a valid play is available.",
-      );
-    }
-
     const drawCount = forcedByPenalty ? state.pendingPenalty!.amount : 1;
     const drawn = drawCards(state, drawCount, options.rng);
     if ("code" in drawn) return { ok: false, error: drawn };
@@ -1426,18 +1410,7 @@ export function getLegalMoves(
         (action) => action.type === "counter" && action.kind === "ace",
       )
     : [];
-  const canAnswerPenalty = state.pendingPenalty !== null;
-  const canAnswerRequest = state.activeAceRequest !== null;
-  if (plays.length > 0) {
-    return [
-      ...plays,
-      ...aceCounters,
-      ...(canAnswerPenalty || canAnswerRequest
-        ? [{ type: "draw" } as const]
-        : []),
-    ];
-  }
-  return [...aceCounters, { type: "draw" }];
+  return [...plays, ...aceCounters, { type: "draw" }];
 }
 
 export function closeWindowByDeadline(

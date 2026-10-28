@@ -390,6 +390,9 @@ async function runGameAction(
         rng: randomUnit,
       });
       if (!result.ok) {
+        if (result.error.code === "DECK_EXHAUSTED") {
+          throw new ApiRouteError("DECK_EXHAUSTED", 409);
+        }
         throw new ApiRouteError("ACTION_REJECTED", 409);
       }
       const nextState = result.state;

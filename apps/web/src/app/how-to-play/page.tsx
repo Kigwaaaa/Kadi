@@ -23,12 +23,12 @@ const faqs = [
   {
     question: "What can I play on my turn?",
     answer:
-      "Usually, play a card that matches the top discard by suit or rank. You can also play a group of cards with the same rank if the first card is playable. Queens and eights have their own suit-and-chain rule.",
+      "Usually, play a card that matches the top discard by suit or rank. You can also play a group of cards with the same rank if the first card is playable. Queens and eights have their own suit-and-chain rule. You may always draw one card instead; drawing ends your turn.",
   },
   {
     question: "What happens when someone plays a 2, 3 or Joker?",
     answer:
-      "The next player faces a penalty of 2, 3 or 5 cards. Penalties do not stack: the latest penalty card sets the amount. You can answer only with the allowed penalty cards or an Ace; otherwise, pick up the penalty and end your turn.",
+      "The next player faces a penalty of 2, 3 or 5 cards. Penalties do not stack: the latest penalty card sets the amount. You can answer only with the allowed penalty cards or an Ace; otherwise, or if you choose to draw, pick up the full penalty and end your turn.",
   },
   {
     question: "How do Aces, Kings and Jacks work?",
@@ -73,9 +73,15 @@ export default function HowToPlayPage() {
         <p>
           Match the top card by suit or rank. You may lay down two or more cards
           of the same rank together; your first card must be playable, and your
-          last card becomes the new top card. If you have no valid move, draw
-          one card and end your turn. If you have no cards when your turn comes,
-          draw one.
+          last card becomes the new top card. You can choose to draw one card
+          instead of playing, even when you have a playable card; drawing ends
+          your turn. If you have no cards when your turn comes, draw one.
+        </p>
+        <p>
+          When facing a 2, 3 or Joker penalty, drawing means picking up the full
+          penalty amount. During an Ace request, drawing takes one card and
+          passes the request to the next player. Drawing cancels your Niko Kadi
+          call. Wait for the five-second window to end before drawing.
         </p>
         <p>
           A Queen or an 8 must match the top card’s suit and be played with
@@ -115,7 +121,8 @@ export default function HowToPlayPage() {
             number; two Aces ask for one exact suit-and-number card. Against a
             penalty, an Ace cancels it and lets you ask for a suit or number.
             The next player must meet the request or draw one card and end their
-            turn. The request stays until matched or one full turn rotation
+            turn, and the request continues to the next player. The request
+            stays until matched or one full turn rotation
             passes. The next player can cancel a request with their own Ace;
             then play must match that Ace’s suit. A player answering a two-Ace
             request with one Ace lets the original player choose whether to drop

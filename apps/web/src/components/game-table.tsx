@@ -29,6 +29,8 @@ const friendlyActionError = (code?: string) => {
   if (code === "INVALID_TARGET")
     return "That player is no longer at the table.";
   if (code === "GAME_NOT_ACTIVE") return "This game is no longer active.";
+  if (code === "DECK_EXHAUSTED")
+    return "There aren’t enough cards available to complete that draw.";
   if (code === "RESTART_REJECTED")
     return "The game can’t be restarted right now.";
   if (code === "REQUEST_FAILED" || code === "SERVICE_UNAVAILABLE")
@@ -712,6 +714,9 @@ export function GameTable({
                 <span className="absolute inset-0">
                   <CardBack decorative />
                 </span>
+                <span className="absolute top-1/2 z-10 -translate-y-1/2 rounded bg-[#000000]/75 px-2 py-1 text-xs font-black text-white">
+                  Draw card
+                </span>
                 <span className="absolute bottom-1 z-10 rounded bg-[#000000] px-1.5 py-0.5 text-[9px] font-black text-white">
                   {gameView.deckCount} left
                 </span>
@@ -906,7 +911,7 @@ export function GameTable({
                           ? `${selectedIds.length} ${selectedIds.length === 1 ? "card" : "cards"} selected. Tap Play to confirm.`
                           : "That combination is not playable. Change your selection."
                         : legalPlayMoves.length > 0
-                          ? "Your turn. Select a playable card or draw."
+                          ? "Your turn. Play a card or draw."
                           : "No playable cards. Draw from the deck."
                       : actionWindow
                         ? `Everyone waits for the window. Next: ${nextName}.`

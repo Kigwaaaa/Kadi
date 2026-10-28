@@ -506,6 +506,39 @@ describe("penalties", () => {
     expect(next.window?.nextPlayerId).toBe("p0");
   });
 
+  it.each([
+    { rank: 2 as const, answerRank: 2 as const, amount: 2 },
+    { rank: 3 as const, answerRank: 3 as const, amount: 3 },
+    { rank: "JOKER" as const, answerRank: "JOKER" as const, amount: 5 },
+  ])(
+    "allows drawing $amount cards while facing a playable $rank penalty answer",
+    ({ rank, answerRank, amount }) => {
+      const source = card(rank === "JOKER" ? null : "hearts", rank);
+      const answer = card(answerRank === "JOKER" ? null : "clubs", answerRank);
+      const state = scenario({
+        hands: [[card("diamonds", 7)], [answer]],
+        top: source,
+        currentPlayerIndex: 1,
+        pendingPenalty: {
+          amount: amount as 2 | 3 | 5,
+          cardId: source.id,
+        },
+        deck: Array.from({ length: amount }, (_, index) =>
+          card("spades", (index + 4) as 4 | 5 | 6 | 7 | 8 | 9 | 10),
+        ),
+      });
+
+      const legalMoves = getLegalMoves(state, "p1");
+      expect(legalMoves.some((move) => move.type === "play")).toBe(true);
+      expect(legalMoves).toContainEqual({ type: "draw" });
+      const next = applied(state, "p1", { type: "draw" });
+
+      expect(next.players[1]!.hand).toHaveLength(amount + 1);
+      expect(next.pendingPenalty).toBeNull();
+      expect(next.window?.actionType).toBe("draw");
+    },
+  );
+
   it("allows an Ace request to be answered by a matching card", () => {
     const match = card("spades", 9);
     const state = scenario({
@@ -577,6 +610,38 @@ describe("penalties", () => {
 });
 
 describe("Aces and requests", () => {
+  it("draws one card during an Ace request and passes the request onward", () => {
+    const matchingCard = card("spades", 6);
+    const state = scenario({
+      hands: [
+        [card("clubs", 7)],
+        [matchingCard],
+        [card("diamonds", 9)],
+      ],
+      top: card("spades", 5),
+      currentPlayerIndex: 1,
+      activeAceRequest: {
+        byPlayerId: "p0",
+        suit: "spades",
+        remainingPlayers: 2,
+      },
+      deck: [card("clubs", 4)],
+    });
+
+    const legalMoves = getLegalMoves(state, "p1");
+    expect(legalMoves.some((move) => move.type === "play")).toBe(true);
+    expect(legalMoves).toContainEqual({ type: "draw" });
+    const next = applied(state, "p1", { type: "draw" });
+
+    expect(next.players[1]!.hand).toHaveLength(2);
+    expect(next.activeAceRequest).toMatchObject({
+      byPlayerId: "p0",
+      suit: "spades",
+      remainingPlayers: 1,
+    });
+    expect(next.currentPlayerIndex).toBe(2);
+  });
+
   it("requires one Ace to request a suit or number, and two Aces to request both", () => {
     const one = card("clubs", "A");
     const oneState = scenario({ hands: [[one], [card("clubs", 7)]] });
@@ -980,16 +1045,18 @@ describe("turns, windows, and drawing", () => {
     expect(next).toEqual(before);
   });
 
-  it("draws one card only when no legal play exists", () => {
+  it("allows drawing even when a legal play exists", () => {
     const state = scenario({
-      hands: [[card("clubs", 7)], [card("hearts", 8)]],
+      hands: [[card("hearts", 7)], [card("hearts", 8)]],
       top: card("hearts", 5),
       deck: [card("spades", 4)],
     });
+    expect(getLegalMoves(state, "p0")).toContainEqual({ type: "draw" });
     const next = applied(state, "p0", { type: "draw" });
     expect(next.players[0]!.hand).toHaveLength(2);
     expect(next.window?.actionType).toBe("draw");
     expect(resultError(state, "p1", { type: "draw" })).toBe("NOT_YOUR_TURN");
+    expect(resultError(next, "p1", { type: "draw" })).toBe("WINDOW_OPEN");
   });
 
   it("reshuffles the discard pile while preserving its top card", () => {
@@ -1149,6 +1216,30 @@ describe("Niko Kadi and winning", () => {
     next = applied(next, "p0", { type: "draw" });
     expect(next.players[0]!.nikoKadiPressed).toBe(false);
     expect(next.nikoKadiFlags.p0).toBe(false);
+  });
+
+  it("allows a player to draw after pressing Niko Kadi even when they can win", () => {
+    const firstPlay = card("hearts", 6);
+    const finisher = card("hearts", 7);
+    const state = scenario({
+      hands: [[firstPlay, finisher], [card("clubs", 9)]],
+      top: card("hearts", 5),
+      deck: [card("diamonds", 4), card("spades", 10)],
+    });
+    let next = applied(state, "p0", playAction(firstPlay));
+    next = applied(next, "p0", { type: "nikoKadi" });
+    next = expired(next);
+    next = applied(next, "p1", { type: "draw" });
+    next = expired(next);
+
+    const legalMoves = getLegalMoves(next, "p0");
+    expect(legalMoves.some((move) => move.type === "play")).toBe(true);
+    expect(legalMoves).toContainEqual({ type: "draw" });
+    next = applied(next, "p0", { type: "draw" });
+
+    expect(next.players[0]!.nikoKadiPressed).toBe(false);
+    expect(next.nikoKadiFlags.p0).toBe(false);
+    expect(next.players[0]!.hand).toHaveLength(2);
   });
 
   it("makes a Niko Kadi player who cannot finish draw one penalty card on their next turn", () => {

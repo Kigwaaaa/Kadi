@@ -40,9 +40,13 @@ THE 5-SECOND WINDOW
 - After EVERY action (play, draw, penalty pickup, Ace) the server opens a 5-second window before the next player can act. It is shown to everyone as a countdown. All players must wait it out. King/Jack counters and the niko kadi button are used in this window. The server owns the timer; clients only render a countdown from a server deadline.
 
 DRAWING
-- A player with no valid card draws 1 card from the deck and their turn ends.
+- On their own turn, a player may always choose to draw, even if they have a valid card. A voluntary draw takes exactly 1 card and ends the player's turn.
+- A player facing a 2, 3 or Joker penalty may choose to draw, but must take the full penalty amount instead of 1 card, exactly as if they had no valid answer.
+- While an Ace request is active, drawing counts as being unable to match: the player draws 1 card and the request continues to the next player.
+- A draw counts as picking up cards and cancels that player's Niko Kadi signal.
 - A player with 0 cards draws 1 card when their turn comes.
-- If the deck runs out, reshuffle the discard pile (keeping the top card) into a new deck.
+- After a draw, the server opens the usual 5-second window. A player cannot draw out of turn or during another player's 5-second window.
+- If the deck is empty, reshuffle the discard pile (keeping the top card) into a new deck before drawing. If neither the deck nor discard pile can supply a card, reject the draw with a friendly error.
 
 NIKO KADI AND WINNING
 - After playing, within the 5-second window, a player may press Niko Kadi to signal they are about to finish. It can only be pressed if every player has at least 1 card.

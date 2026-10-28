@@ -138,6 +138,155 @@ describe("room API routes", () => {
     expect(mocks.updateRoomState).not.toHaveBeenCalled();
   });
 
+  it("keeps a drawn card private and returns no card in the draw response", async () => {
+    const room = mocks.authContext!.room as ReturnType<typeof makeRoom>;
+    const drawnCard = {
+      id: "c371b253-d3df-4cf5-9f2d-c2c0f68b8a10",
+      suit: "clubs" as const,
+      rank: 4 as const,
+    };
+    room.state.deck = [drawnCard];
+    mocks.updateRoomState.mockImplementation(
+      async (_roomId, version, update) => {
+        const currentRoom = mocks.authContext!.room as ReturnType<
+          typeof makeRoom
+        >;
+        const state = update(currentRoom.state, currentRoom);
+        const updatedRoom = {
+          ...currentRoom,
+          state,
+          version: version + 1,
+          window_deadline: state.window?.deadline ?? null,
+        };
+        mocks.authContext = { ...mocks.authContext!, room: updatedRoom };
+        mocks.getRoom.mockResolvedValue(updatedRoom);
+        return updatedRoom;
+      },
+    );
+
+    const response = await POST(
+      new Request(`https://kadi.example/api/rooms/${roomId}/draw`, {
+        method: "POST",
+        headers: {
+          origin: "https://kadi.example",
+          "content-type": "application/json",
+        },
+        body: "{}",
+      }),
+      { params: Promise.resolve({ roomId, action: "draw" }) },
+    );
+
+    expect(response.status, await response.clone().text()).toBe(200);
+    const actionBody = await response.json();
+    expect(JSON.stringify(actionBody)).not.toContain(drawnCard.id);
+
+    const updatedRoom = mocks.authContext!.room as ReturnType<typeof makeRoom>;
+    const otherPlayer = {
+      id: otherPlayerId,
+      room_id: roomId,
+      name: "Player two",
+      muted: false,
+      joined_at: "2026-10-27T10:01:00.000Z",
+      seat: 1,
+    };
+    mocks.authContext = { room: updatedRoom, player: otherPlayer };
+    const viewResponse = await GET(
+      new Request(`https://kadi.example/api/rooms/${roomId}/view`),
+      { params: Promise.resolve({ roomId, action: "view" }) },
+    );
+
+    expect(viewResponse.status).toBe(200);
+    const viewBody = await viewResponse.json();
+    expect(viewBody.view.players[0].hand).toBeNull();
+    expect(JSON.stringify(viewBody)).not.toContain(drawnCard.id);
+  });
+
+  it.each(["out of turn", "during an open action window"])(
+    "rejects a draw %s",
+    async (drawTiming) => {
+      const room = mocks.authContext!.room as ReturnType<typeof makeRoom>;
+      if (drawTiming === "out of turn") {
+        room.state.currentPlayerIndex = 1;
+      } else {
+        const now = Date.now();
+        room.state.window = {
+          openedAt: now,
+          deadline: now + 5_000,
+          actorId: otherPlayerId,
+          nextPlayerId: playerId,
+          actionType: "play",
+          counterKind: null,
+        };
+      }
+      mocks.updateRoomState.mockImplementation(
+        async (_roomId, version, update) => {
+          const currentRoom = mocks.authContext!.room as ReturnType<
+            typeof makeRoom
+          >;
+          const state = update(currentRoom.state, currentRoom);
+          return {
+            ...currentRoom,
+            state,
+            version: version + 1,
+            window_deadline: state.window?.deadline ?? null,
+          };
+        },
+      );
+
+      const response = await POST(
+        new Request(`https://kadi.example/api/rooms/${roomId}/draw`, {
+          method: "POST",
+          headers: {
+            origin: "https://kadi.example",
+            "content-type": "application/json",
+          },
+          body: "{}",
+        }),
+        { params: Promise.resolve({ roomId, action: "draw" }) },
+      );
+
+      expect(response.status).toBe(409);
+      await expect(response.json()).resolves.toEqual({
+        error: "ACTION_REJECTED",
+      });
+    },
+  );
+
+  it("returns a friendly draw-exhaustion error when no pile can supply cards", async () => {
+    const room = mocks.authContext!.room as ReturnType<typeof makeRoom>;
+    room.state.deck = [];
+    room.state.discard = [room.state.discard.at(-1)!];
+    mocks.updateRoomState.mockImplementation(
+      async (_roomId, version, update) => {
+        const currentRoom = mocks.authContext!.room as ReturnType<
+          typeof makeRoom
+        >;
+        const state = update(currentRoom.state, currentRoom);
+        return {
+          ...currentRoom,
+          state,
+          version: version + 1,
+          window_deadline: state.window?.deadline ?? null,
+        };
+      },
+    );
+
+    const response = await POST(
+      new Request(`https://kadi.example/api/rooms/${roomId}/draw`, {
+        method: "POST",
+        headers: {
+          origin: "https://kadi.example",
+          "content-type": "application/json",
+        },
+        body: "{}",
+      }),
+      { params: Promise.resolve({ roomId, action: "draw" }) },
+    );
+
+    expect(response.status, await response.clone().text()).toBe(409);
+    await expect(response.json()).resolves.toEqual({ error: "DECK_EXHAUSTED" });
+  });
+
   it("checks owner permission on mute before changing a player", async () => {
     const room = makeRoom(otherPlayerId);
     const player = mocks.authContext!.player;
